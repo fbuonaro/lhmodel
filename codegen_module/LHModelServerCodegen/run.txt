@@ -1,0 +1,1 @@
+java -cp ./target/LHModelServerCodegen-swagger-codegen-1.0.0.jar:/lhmodel-scg/swagger-codegen/swagger-codegen-cli.jar io.swagger.codegen.v3.cli.SwaggerCodegen generate -l LHModelServerCodegen -i ../test/TestLHModel/TestLHModel.js -c ../test/TestLHModel/TestLHModel.config.js -o ../test/TestLHModel/expected/ --additional-properties modelIncludeDir=lhmodel_test

@@ -1,0 +1,79 @@
+##################################################################################
+# STAGE 0 - base environemtn with first set of runtime dependencies
+##################################################################################
+FROM centos:centos7 as lhmodel-scg-s0-base-env
+LABEL lhmodel-scg-stage-base-env="yes"
+LABEL lhmodel-scg-stage-build-env="no"
+LABEL lhmodel-scg-stage-build="no"
+
+RUN yum -y --enablerepo=extras install epel-release && \
+    yum -y install https://repo.ius.io/ius-release-el7.rpm && \
+    yum clean all
+
+##################################################################################
+# STAGE 1 - build tools and libraries needed to build lhmodel swagger code generator skeleton
+##################################################################################
+FROM lhmodel-scg-s0-base-env as lhmodel-scg-s1-build-env
+LABEL lhmodel-scg-stage-base-env="no"
+LABEL lhmodel-scg-stage-build-env="yes"
+LABEL lhmodel-scg-stage-build="no"
+
+# for getting, running swagger-codegen
+# 'which' used by mvn to get the right java version
+RUN yum -y install \
+        which \
+        java-1.8.0-openjdk-devel \
+        wget && \
+    yum clean all
+
+# maven
+RUN wget \
+        https://ftp.wayne.edu/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz \
+        -O /tmp/apache-maven-3.6.3-bin.tar.gz && \
+    mkdir /usr/local/maven && \
+    tar -xzvf /tmp/apache-maven-3.6.3-bin.tar.gz -C /usr/local/maven && \
+    alternatives --install /usr/bin/mvn mvn /usr/local/maven/apache-maven-3.6.3/bin/mvn 1
+    
+# swagger
+RUN mkdir -p /lhmodel-scg/swagger-codegen && \
+    wget \
+        https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.18/swagger-codegen-cli-3.0.18.jar \
+        -O /lhmodel-scg/swagger-codegen/swagger-codegen-cli.jar
+
+# generate the skeleton of a codegen module with -o .. -n .. -p ..
+ENTRYPOINT [ "java", "-jar", "/lhmodel-scg/swagger-codegen/swagger-codegen-cli.jar", "meta" ]
+#                     -o /lhmodel-scg/LHModelServerCodegen
+#                     -n LHModelServerCodegen
+#                     -p com.lhmodel.server.codegen
+#                     ... and remember to edit the META-INF and .java a bit to get the right camel case  ..
+
+##################################################################################
+# STAGE 2 - the lhmodel swagger code generator source skeleton
+##################################################################################
+FROM lhmodel-scg-s1-build-env as lhmodel-scg-s2-build
+LABEL lhmodel-scg-stage-base-env="no"
+LABEL lhmodel-scg-stage-build-env="no"
+LABEL lhmodel-scg-stage-build="yes"
+
+# build the lhmodel codegen module
+ADD ./codegen_module /lhmodel-scg/codegen_module
+RUN cd /lhmodel-scg/codegen_module/LHModelServerCodegen && \
+    mvn -e clean package 
+
+# test the codegen module
+RUN mkdir -p /lhmodel-scg/test/generated && \
+    java \
+        -cp  /lhmodel-scg/codegen_module/LHModelServerCodegen/target/LHModelServerCodegen-swagger-codegen-1.0.0.jar:/lhmodel-scg/swagger-codegen/swagger-codegen-cli.jar \
+        io.swagger.codegen.v3.cli.SwaggerCodegen generate \
+        -l LHModelServerCodegen \
+        -i /lhmodel-scg/codegen_module/test/TestLHModel/TestLHModel.js \
+        -c /lhmodel-scg/codegen_module/test/TestLHModel/TestLHModel.config.js \
+        --additional-properties modelIncludeDir=lhmodel_test,customFormatTypesFile=/lhmodel-scg/codegen_module/test/TestLHModel/customTypes.js \
+        -o /lhmodel-scg/test/generated && \
+    diff -r /lhmodel-scg/codegen_module/test/TestLHModel/expected/src /lhmodel-scg/test/generated/src
+
+# generate src and header files from spec and conf
+ENTRYPOINT [ "java", \
+            "-cp", "/lhmodel-scg/codegen_module/LHModelServerCodegen/target/LHModelServerCodegen-swagger-codegen-1.0.0.jar:/lhmodel-scg/swagger-codegen/swagger-codegen-cli.jar", \
+            "io.swagger.codegen.v3.cli.SwaggerCodegen", "generate", \
+            "-l", "LHModelServerCodegen" ]

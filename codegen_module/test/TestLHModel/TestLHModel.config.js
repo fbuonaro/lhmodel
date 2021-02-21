@@ -1,0 +1,4 @@
+{
+    "packageName": "TestLHModel",
+    "namespace": "TestLHModelNS"
+}

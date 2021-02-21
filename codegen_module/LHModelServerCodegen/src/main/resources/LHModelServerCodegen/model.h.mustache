@@ -1,0 +1,124 @@
+{{#models}}
+{{#model}}
+#ifndef __{{namespace}}_{{classname}}_lhmodel_H__
+#define __{{namespace}}_{{classname}}_lhmodel_H__
+
+{{#imports}}
+{{{this}}}
+{{/imports}}
+
+#include <lhmodel/membermeta.h>
+#include <lhmodel/modelmeta.h>
+#include <lhmodel/visitor.h>
+
+#include <array>
+#include <unordered_map>
+
+namespace {{namespace}}
+{
+    class {{classname}};
+}
+
+namespace LHModelNS
+{
+    template<>
+    class MemberType< {{namespace}}::{{classname}} >
+    {
+        public:
+            typedef ModelMemberType valueType;
+    };
+
+    template<>
+    class ModelMembersMeta< {{namespace}}::{{classname}} >
+    {
+        public:
+            static constexpr std::array< MemberMeta, {{vendorExtensions.x-numVars}} > membersMeta{ {
+                {{#vars}}
+                MemberMeta( "{{name}}", "{{{datatype}}}", "{{dataFormat}}" ){{#hasMore}},{{/hasMore}}{{^hasMore}} } };{{/hasMore}}
+                {{/vars}}
+
+            static const std::unordered_map< std::string, size_t > memberIndex;
+    };
+
+    template<>
+    class ModelModelMeta< {{namespace}}::{{classname}} >
+    {
+        public:
+            static constexpr ModelMeta modelMeta{ "{{classname}}" };
+    };
+
+}
+
+namespace {{namespace}}
+{
+    class {{classname}}
+    {
+        public:
+            template< typename V >
+            void Accept( V& visitor ) const
+            {
+                {{#vars}}
+                visitor._VisitMember( LHModelNS::GetMemberMeta< {{classname}}, {{vendorExtensions.x-varIndex}} >(), {{name}} );
+                {{/vars}}
+            }
+
+
+            template< typename V >
+            void Accept( V& visitor )
+            {
+                {{#vars}}
+                visitor._VisitMember( LHModelNS::GetMemberMeta< {{classname}}, {{vendorExtensions.x-varIndex}} >(), {{name}} );
+                {{/vars}}
+            }
+
+            template< typename V >
+            void Accept( V& visitor, const std::string& member ) const
+            {
+                size_t memberIndex = LHModelNS::GetMemberIndex< {{classname}} >( member );
+                switch( memberIndex )
+                {
+                    default:
+                    {
+                        break;
+                    }
+                    {{#vars}}
+                    case( {{vendorExtensions.x-varIndex}} ):
+                    {
+                        visitor._VisitMember( LHModelNS::GetMemberMeta< {{classname}}, {{vendorExtensions.x-varIndex}} >(), {{name}} );
+                        break;
+                    }
+                    {{/vars}}
+                }
+            }
+
+            template< typename V >
+            void Accept( V& visitor, const std::string& member )
+            {
+                size_t memberIndex = LHModelNS::GetMemberIndex< {{classname}} >( member );
+                switch( memberIndex )
+                {
+                    default:
+                    {
+                        break;
+                    }
+                    {{#vars}}
+                    case( {{vendorExtensions.x-varIndex}} ):
+                    {
+                        visitor._VisitMember( LHModelNS::GetMemberMeta< {{classname}}, {{vendorExtensions.x-varIndex}} >(), {{name}} );
+                        break;
+                    }
+                    {{/vars}}
+                }
+            }
+
+            {{#vars}}
+            {{{datatype}}} {{name}};
+            {{/vars}}
+    };
+}
+
+// Swagger Codegen OpenAPI v3 LHModelServerCodegen v{{lhmodelServerCodegenVersion}}
+
+#endif
+{{/model}}
+{{/models}}

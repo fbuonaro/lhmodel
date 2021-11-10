@@ -1,17 +1,19 @@
 #!/bin/bash
 
 DOCKERFILE_PATH="./Dockerfiles/Dockerfile.lhmodel"
-TARGET_STAGE="lhmodel-s4-main-env"
-TARGET_TAG="lhmodel:main"
+MAIN_STAGE="lhmodel-s4-main-env"
+MAIN_TAG="lhmodel:main"
 TEST_STAGE="lhmodel-stage-test-env"
 TEST_TAG="lhmodel:test-env"
+TARGET_STAGE=${MAIN_STAGE}
+TARGET_TAG=${MAIN_TAG}
 BASE_STAGE="lhmodel-stage-base-env"
+
+if [ $1 = "-test" ];
+then
+    TARGET_STAGE=${TEST_STAGE}
+    TARGET_TAG=${TEST_TAG}
+fi
 
 # Build the main image
 docker build --target ${TARGET_STAGE} -t ${TARGET_TAG} -f ${DOCKERFILE_PATH} . || exit 1
-
-# Tag the intermediate image, expecting it to be test-env
-docker tag $(docker image ls -a -f "label=${TEST_STAGE}=yes" -q | head -1) ${TEST_TAG} || exit 1
-
-# Clean up overridden images
-docker image prune -f --filter "label=${BASE_STAGE}" || exit 1

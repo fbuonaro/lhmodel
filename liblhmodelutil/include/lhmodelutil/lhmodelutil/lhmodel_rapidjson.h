@@ -43,11 +43,11 @@ namespace LHModelUtilNS
     template< typename W, typename T, typename = void >
     class PrimitiveSeriailzer
     {
-        public:
-            static void serialize( W& w, bool inKey, const T& value )
-            {
-                defaultSerialize( w, inKey, value );
-            }
+    public:
+        static void serialize( W& w, bool inKey, const T& value )
+        {
+            defaultSerialize( w, inKey, value );
+        }
     };
 
     enum class SerializationContext
@@ -61,133 +61,150 @@ namespace LHModelUtilNS
     template< typename W >
     class JsonSerializerSAX
     {
-        public:
-            template< typename U, typename T >
-            friend void SerializeModel( U& writer, const T& model );
+    public:
+        template< typename U, typename T >
+        friend void SerializeModel( U& writer, const T& model );
 
-        protected:
-            typedef W WriterType;
+    protected:
+        typedef W WriterType;
 
-            // NOTE: stores w as a reference
-            //       expects caller to call StartObject before and EndObject after passing this to Accept
-            JsonSerializerSAX( WriterType& _w )
-            :   w( _w )
-            ,   contextStack()
-            {
-                contextStack.push_back( SerializationContext::InModel );
-            }
+        // NOTE: stores w as a reference
+        //       expects caller to call StartObject before and EndObject after passing this to Accept
+        JsonSerializerSAX( WriterType& _w )
+            : w( _w )
+            , contextStack()
+        {
+            contextStack.push_back( SerializationContext::InModel );
+        }
 
-            template< typename T >
-            bool EnterModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, const T& modelMember )
-            {
-                if( contextStack.back() == SerializationContext::InModel )
-                    w.Key( memberMeta.name );
+        template< typename T >
+        bool EnterModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, const T& modelMember )
+        {
+            (void)modelMeta;
+            (void)modelMember;
+            if ( contextStack.back() == SerializationContext::InModel )
+                w.Key( memberMeta.name );
 
-                w.StartObject();
+            w.StartObject();
 
-                contextStack.push_back( SerializationContext::InModel );
+            contextStack.push_back( SerializationContext::InModel );
 
-                return true;
-            }
+            return true;
+        }
 
-            template< typename T >
-            void LeaveModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, const T& model )
-            {
-                contextStack.pop_back();
+        template< typename T >
+        void LeaveModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, const T& model )
+        {
+            (void)modelMeta;
+            (void)memberMeta;
+            (void)model;
+            contextStack.pop_back();
 
-                w.EndObject();
-            }
+            w.EndObject();
+        }
 
-            template< typename T >
-            bool EnterArrayMember( const MemberMeta& memberMeta, const T& arrayMember )
-            {
-                if( contextStack.back() == SerializationContext::InModel )
-                    w.Key( memberMeta.name );
+        template< typename T >
+        bool EnterArrayMember( const MemberMeta& memberMeta, const T& arrayMember )
+        {
+            (void)arrayMember;
+            if ( contextStack.back() == SerializationContext::InModel )
+                w.Key( memberMeta.name );
 
-                w.StartArray();
+            w.StartArray();
 
-                contextStack.push_back( SerializationContext::InValue );
+            contextStack.push_back( SerializationContext::InValue );
 
-                return true;
-            }
+            return true;
+        }
 
-            bool EnterArrayValue( const MemberMeta& memberMeta )
-            {
-                return true;
-            }
+        bool EnterArrayValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            return true;
+        }
 
-            void LeaveArrayValue( const MemberMeta& memberMeta )
-            {
-                return;
-            }
+        void LeaveArrayValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            return;
+        }
 
-            template< typename T >
-            void LeaveArrayMember( const MemberMeta& memberMeta, const T& vectorMember )
-            {
-                contextStack.pop_back();
+        template< typename T >
+        void LeaveArrayMember( const MemberMeta& memberMeta, const T& vectorMember )
+        {
+            (void)memberMeta;
+            (void)vectorMember;
+            contextStack.pop_back();
 
-                w.EndArray();
-            }
+            w.EndArray();
+        }
 
-            template< typename T >
-            void VisitPrimitiveMember( const MemberMeta& memberMeta, const T& primitiveMember )
-            {
-                if( contextStack.back() == SerializationContext::InModel )
-                    w.Key( memberMeta.name );
+        template< typename T >
+        void VisitPrimitiveMember( const MemberMeta& memberMeta, const T& primitiveMember )
+        {
+            if ( contextStack.back() == SerializationContext::InModel )
+                w.Key( memberMeta.name );
 
-                PrimitiveSeriailzer< W, T >::serialize( w,
-                                                        contextStack.back() == SerializationContext::InKey,
-                                                        primitiveMember );
-            }
+            PrimitiveSeriailzer< W, T >::serialize( w,
+                contextStack.back() == SerializationContext::InKey,
+                primitiveMember );
+        }
 
-            template< typename T >
-            bool EnterMapMember( const MemberMeta& memberMeta, const T& mapMember )
-            {
-                if( contextStack.back() == SerializationContext::InModel )
-                    w.Key( memberMeta.name );
+        template< typename T >
+        bool EnterMapMember( const MemberMeta& memberMeta, const T& mapMember )
+        {
+            (void)mapMember;
+            if ( contextStack.back() == SerializationContext::InModel )
+                w.Key( memberMeta.name );
 
-                w.StartObject();
+            w.StartObject();
 
-                contextStack.push_back( SerializationContext::InMap );
+            contextStack.push_back( SerializationContext::InMap );
 
-                return true;
-            }
+            return true;
+        }
 
-            bool EnterMapEntryKey( const MemberMeta& memberMeta )
-            {
-                contextStack.push_back( SerializationContext::InKey );
+        bool EnterMapEntryKey( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            contextStack.push_back( SerializationContext::InKey );
 
-                return true;
-            }
+            return true;
+        }
 
-            void LeaveMapEntryKey( const MemberMeta& memberMeta )
-            {
-                contextStack.pop_back();
-            }
+        void LeaveMapEntryKey( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            contextStack.pop_back();
+        }
 
-            bool EnterMapEntryValue( const MemberMeta& memberMeta )
-            {
-                contextStack.push_back( SerializationContext::InValue );
+        bool EnterMapEntryValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            contextStack.push_back( SerializationContext::InValue );
 
-                return true;
-            }
+            return true;
+        }
 
-            void LeaveMapEntryValue( const MemberMeta& memberMeta )
-            {
-                contextStack.pop_back();
-            }
+        void LeaveMapEntryValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            contextStack.pop_back();
+        }
 
-            template< typename T >
-            void LeaveMapMember( const MemberMeta& memberMeta, const T& mapMember )
-            {
-                contextStack.pop_back();
+        template< typename T >
+        void LeaveMapMember( const MemberMeta& memberMeta, const T& mapMember )
+        {
+            (void)memberMeta;
+            (void)mapMember;
+            contextStack.pop_back();
 
-                w.EndObject();
-            }
+            w.EndObject();
+        }
 
-        private:
-            WriterType& w;
-            std::deque< SerializationContext > contextStack;
+    private:
+        WriterType& w;
+        std::deque< SerializationContext > contextStack;
     };
 
     template< typename T, typename V >
@@ -205,11 +222,11 @@ namespace LHModelUtilNS
     template< typename T, typename V, typename = void >
     class PrimitiveDeserializer
     {
-        public:
-            static bool deserialize( T& member, const V& value, std::string& failureReason )
-            {
-                return defaultDeserialize( member, value, failureReason );
-            }
+    public:
+        static bool deserialize( T& member, const V& value, std::string& failureReason )
+        {
+            return defaultDeserialize( member, value, failureReason );
+        }
     };
 
     enum class ContainerType
@@ -221,385 +238,404 @@ namespace LHModelUtilNS
 
     class DeseriailzationFailure : public std::runtime_error
     {
-        public:
-            DeseriailzationFailure( const std::string& failure );
-            virtual ~DeseriailzationFailure();
+    public:
+        DeseriailzationFailure( const std::string& failure );
+        virtual ~DeseriailzationFailure();
     };
 
     template< typename V >
     class JsonDeserializerDOM
     {
-        public:
-            template< typename T, typename U >
-            friend void DeserializeValue( T& model, const U& value );
+    public:
+        template< typename T, typename U >
+        friend void DeserializeValue( T& model, const U& value );
 
-            template< typename T, typename U >
-            friend bool DeserializeValue( T& model, const U& value, std::ostream* trace, bool failFast );
+        template< typename T, typename U >
+        friend bool DeserializeValue( T& model, const U& value, std::ostream* trace, bool failFast );
 
-        protected:
-            typedef V ValueType;
+    protected:
+        typedef V ValueType;
 
-            enum class FailureHandling
+        enum class FailureHandling
+        {
+            Throw,
+            FailFast,
+            None
+        };
+
+        // NOTE: stores v as a reference
+        JsonDeserializerDOM( const ValueType& _v, FailureHandling _failureHandling, std::ostream* _trace )
+            : v( _v )
+            , containerStack()
+            , mapContextStack()
+            , arrayContextStack()
+            , failureHandling( _failureHandling )
+            , trace( _trace )
+            , firstTrace( true )
+            , anyFailures( false )
+            , valid( true )
+        {
+            if ( !v.IsObject() )
             {
-                Throw,
-                FailFast,
-                None
-            };
+                std::ostringstream oss;
 
-            // NOTE: stores v as a reference
-            JsonDeserializerDOM( const ValueType& _v, FailureHandling _failureHandling, std::ostream* _trace )
-            :   v( _v )
-            ,   containerStack()
-            ,   mapContextStack()
-            ,   arrayContextStack()
-            ,   failureHandling( _failureHandling )
-            ,   trace( _trace )
-            ,   firstTrace( true )
-            ,   anyFailures( false )
-            ,   valid( true )
+                oss << "expected object, received " << v.GetType();
+
+                handleFailure( oss.str(), false );
+            }
+            else
             {
-                if( !v.IsObject() )
-                {
-                    std::ostringstream oss;
+                containerStack.push_back( std::make_tuple( &v, ContainerType::Model ) );
+            }
+        }
 
-                    oss << "expected object, received " << v.GetType();
+        JsonDeserializerDOM( const ValueType& _v )
+            : JsonDeserializerDOM( _v, FailureHandling::Throw, nullptr )
+        {
+        }
 
-                    handleFailure( oss.str(), false );
-                }
-                else
-                {
-                    containerStack.push_back( std::make_tuple( &v, ContainerType::Model ) );
-                }
+        JsonDeserializerDOM( const ValueType& _v, std::ostream* _trace, bool failFast )
+            : JsonDeserializerDOM( _v, ( failFast ? FailureHandling::FailFast : FailureHandling::None ), _trace )
+        {
+        }
+
+        template< typename T >
+        bool EnterModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, T& modelMember )
+        {
+            (void)modelMeta;
+            (void)modelMember;
+            if ( !valid )
+                return false;
+
+            const ValueType* nextValue = getNextValue( memberMeta );
+
+            if ( !nextValue )
+            {
+                std::ostringstream oss;
+
+                oss << "member[" << memberMeta << "] not found";
+
+                handleFailure( oss.str(), true );
+
+                return false;
             }
 
-            JsonDeserializerDOM( const ValueType& _v )
-            :   JsonDeserializerDOM( _v, FailureHandling::Throw, nullptr )
+            if ( !nextValue->IsObject() )
             {
+                std::ostringstream oss;
+
+                oss << "member[" << memberMeta << "] expected object, encountered " << nextValue->GetType();
+
+                handleFailure( oss.str(), true );
+
+                return false;
             }
 
-            JsonDeserializerDOM( const ValueType& _v, std::ostream* _trace, bool failFast )
-            :   JsonDeserializerDOM( _v, ( failFast ? FailureHandling::FailFast : FailureHandling::None ), _trace )
+
+            containerStack.push_back( std::make_tuple( nextValue, ContainerType::Model ) );
+
+            return true;
+        }
+
+        template< typename T >
+        void LeaveModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, T& model )
+        {
+            (void)modelMeta;
+            (void)memberMeta;
+            (void)model;
+            containerStack.pop_back();
+        }
+
+        template< typename T >
+        bool EnterArrayMember( const MemberMeta& memberMeta, T& arrayMember )
+        {
+            (void)arrayMember;
+            if ( !valid )
+                return false;
+
+            const ValueType* nextValue = getNextValue( memberMeta );
+
+            if ( !nextValue )
             {
+                std::ostringstream oss;
+
+                oss << "member[" << memberMeta << "] not found";
+
+                handleFailure( oss.str(), true );
+
+                return false;
             }
 
-            template< typename T >
-            bool EnterModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, T& modelMember )
+            if ( !nextValue->IsArray() )
             {
-                if( !valid )
-                    return false;
+                std::ostringstream oss;
 
-                const ValueType* nextValue = getNextValue( memberMeta );
+                oss << "member[" << memberMeta << "] expected array, encountered " << nextValue->GetType();
 
-                if( !nextValue )
-                {
-                    std::ostringstream oss;
+                handleFailure( oss.str(), true );
 
-                    oss << "member[" << memberMeta << "] not found";
-
-                    handleFailure( oss.str(), true );
-
-                    return false;
-                }
-
-                if( !nextValue->IsObject() )
-                {
-                    std::ostringstream oss;
-
-                    oss << "member[" << memberMeta << "] expected object, encountered " << nextValue->GetType();
-
-                    handleFailure( oss.str(), true );
-
-                    return false;
-                }
-
-
-                containerStack.push_back( std::make_tuple( nextValue, ContainerType::Model ) );
-
-                return true;
+                return false;
             }
 
-            template< typename T >
-            void LeaveModelMember( const ModelMeta& modelMeta, const MemberMeta& memberMeta, T& model )
+
+            containerStack.push_back( std::make_tuple( nextValue, ContainerType::Array ) );
+            arrayContextStack.push_back( std::make_tuple( nextValue->Begin(), nextValue->End() ) );
+
+            return true;
+        }
+
+        bool HasMoreArrayValues( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            assert( arrayContextStack.size() );
+
+            return ( std::get< 0 >( arrayContextStack.back() ) < std::get< 1 >( arrayContextStack.back() ) );
+        }
+
+        bool EnterArrayValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            return valid;
+        }
+
+        void LeaveArrayValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            assert( mapContextStack.size() );
+
+            // go to next array value
+            ++( std::get< 0 >( arrayContextStack.back() ) );
+        }
+
+        template< typename T >
+        void LeaveArrayMember( const MemberMeta& memberMeta, T& vectorMember )
+        {
+            (void)memberMeta;
+            (void)vectorMember;
+            containerStack.pop_back();
+            arrayContextStack.pop_back();
+        }
+
+        template< typename T >
+        void VisitPrimitiveMember( const MemberMeta& memberMeta, T& primitiveMember )
+        {
+            if ( !valid )
+                return;
+
+            const ValueType* nextValue = getNextValue( memberMeta );
+
+            if ( !nextValue )
             {
-                containerStack.pop_back();
+                std::ostringstream oss;
+
+                oss << "member[" << memberMeta << "] not found";
+
+                handleFailure( oss.str(), true );
+
+                return;
             }
 
-            template< typename T >
-            bool EnterArrayMember( const MemberMeta& memberMeta, T& arrayMember )
+            std::string failureReason;
+            if ( !( PrimitiveDeserializer< T, V >::deserialize( primitiveMember,
+                *nextValue,
+                failureReason ) ) )
             {
-                if( !valid )
-                    return false;
+                std::ostringstream oss;
 
-                const ValueType* nextValue = getNextValue( memberMeta );
+                oss << "member[" << memberMeta << "] failed to be deserialized[" << failureReason << "]";
 
-                if( !nextValue )
-                {
-                    std::ostringstream oss;
+                handleFailure( oss.str(), true );
+            }
+        }
 
-                    oss << "member[" << memberMeta << "] not found";
+        template< typename T >
+        bool EnterMapMember( const MemberMeta& memberMeta, T& mapMember )
+        {
+            (void)mapMember;
+            if ( !valid )
+                return false;
 
-                    handleFailure( oss.str(), true );
+            const ValueType* nextValue = getNextValue( memberMeta );
 
-                    return false;
-                }
+            if ( !nextValue )
+            {
+                std::ostringstream oss;
 
-                if( !nextValue->IsArray() )
-                {
-                    std::ostringstream oss;
+                oss << "member[" << memberMeta << "] not found";
 
-                    oss << "member[" << memberMeta << "] expected array, encountered " << nextValue->GetType();
+                handleFailure( oss.str(), true );
 
-                    handleFailure( oss.str(), true );
-
-                    return false;
-                }
-
-
-                containerStack.push_back( std::make_tuple( nextValue, ContainerType::Array ) );
-                arrayContextStack.push_back( std::make_tuple( nextValue->Begin(), nextValue->End() ) );
-
-                return true;
+                return false;
             }
 
-            bool HasMoreArrayValues( const MemberMeta& memberMeta )
+            if ( !nextValue->IsObject() )
+            {
+                std::ostringstream oss;
+
+                oss << "member[" << memberMeta << "] expected object, encountered " << nextValue->GetType();
+
+                handleFailure( oss.str(), true );
+
+                return false;
+            }
+
+            containerStack.push_back( std::make_tuple( nextValue, ContainerType::Map ) );
+            mapContextStack.push_back(
+                std::make_tuple(
+                    nextValue->MemberBegin(),
+                    nextValue->MemberEnd(),
+                    nullptr ) );
+
+            return true;
+        }
+
+        bool HasMoreMapEntries( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            assert( mapContextStack.size() );
+
+            return ( std::get< 0 >( mapContextStack.back() ) < std::get< 1 >( mapContextStack.back() ) );
+        }
+
+        bool EnterMapEntryKey( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            if ( !valid )
+                return false;
+
+            assert( mapContextStack.size() );
+            assert( std::get< 0 >( mapContextStack.back() ) !=
+                std::get< 1 >( mapContextStack.back() ) );
+
+            std::get< 2 >( mapContextStack.back() ) = &std::get< 0 >( mapContextStack.back() )->name;
+
+            return true;
+        }
+
+        void LeaveMapEntryKey( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            assert( mapContextStack.size() );
+            std::get< 2 >( mapContextStack.back() ) = nullptr;
+        }
+
+        bool EnterMapEntryValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            if ( !valid )
+                return false;
+
+            assert( mapContextStack.size() );
+            std::get< 2 >( mapContextStack.back() ) = &std::get< 0 >( mapContextStack.back() )->value;
+
+            return true;
+        }
+
+        void LeaveMapEntryValue( const MemberMeta& memberMeta )
+        {
+            (void)memberMeta;
+            assert( mapContextStack.size() );
+            // go to next map entry
+            std::get< 2 >( mapContextStack.back() ) = nullptr;
+            ++( std::get< 0 >( mapContextStack.back() ) );
+        }
+
+        template< typename T >
+        void LeaveMapMember( const MemberMeta& memberMeta, T& mapMember )
+        {
+            (void)memberMeta;
+            (void)mapMember;
+            containerStack.pop_back();
+            mapContextStack.pop_back();
+        }
+
+        bool AnyFailures() const
+        {
+            return anyFailures || !valid;
+        }
+
+    private:
+        typedef std::tuple< const ValueType*, ContainerType > ContainerContext;
+        typedef typename ValueType::ConstMemberIterator MembIt;
+        typedef typename ValueType::ConstValueIterator ValueIt;
+
+        // start|end|next values in map/array
+        typedef std::tuple< MembIt, MembIt, const ValueType* > MapContext;
+        typedef std::tuple< ValueIt, ValueIt > ArrayContext;
+
+        const ValueType* getNextValue( const MemberMeta& memberMeta )
+        {
+            assert( containerStack.size() );
+            const ContainerContext& currentContainer = containerStack.back();
+
+            switch ( std::get< 1 >( currentContainer ) )
+            {
+            case( ContainerType::Array ):
             {
                 assert( arrayContextStack.size() );
+                assert( std::get< 0 >( arrayContextStack.back() ) !=
+                    std::get< 1 >( arrayContextStack.back() ) );
 
-                return ( std::get< 0 >( arrayContextStack.back() ) < std::get< 1 >( arrayContextStack.back() ) );
+                return std::get< 0 >( arrayContextStack.back() );
             }
-
-            bool EnterArrayValue( const MemberMeta& memberMeta )
-            {
-                return valid;
-            }
-
-            void LeaveArrayValue( const MemberMeta& memberMeta )
+            case( ContainerType::Map ):
             {
                 assert( mapContextStack.size() );
+                assert( std::get< 2 >( mapContextStack.back() ) );
 
-                // go to next array value
-                ++( std::get< 0 >( arrayContextStack.back() ) );
+                return std::get< 2 >( mapContextStack.back() );
             }
-
-            template< typename T >
-            void LeaveArrayMember( const MemberMeta& memberMeta, T& vectorMember )
+            case( ContainerType::Model ):
+            default:
             {
-                containerStack.pop_back();
-                arrayContextStack.pop_back();
+                const ValueType& currentValue = *( std::get< 0 >( currentContainer ) );
+
+                MembIt membIt = currentValue.FindMember( memberMeta.name );
+
+                if ( membIt == currentValue.MemberEnd() )
+                    return nullptr;
+                else
+                    return &( membIt->value );
             }
+            }
+        }
 
-            template< typename T >
-            void VisitPrimitiveMember( const MemberMeta& memberMeta, T& primitiveMember )
+        void handleFailure( const std::string& failureReason, bool canContinue )
+        {
+            anyFailures = true;
+
+            if ( failureHandling == FailureHandling::Throw )
             {
-                if( !valid )
-                    return;
-
-                const ValueType* nextValue = getNextValue( memberMeta );
-
-                if( !nextValue )
+                valid = false;
+                throw DeseriailzationFailure( failureReason );
+            }
+            else
+            {
+                if ( trace )
                 {
-                    std::ostringstream oss;
+                    if ( !firstTrace )
+                        *trace << "\n";
 
-                    oss << "member[" << memberMeta << "] not found";
-
-                    handleFailure( oss.str(), true );
-
-                    return;
+                    *trace << failureReason;
+                    firstTrace = false;
                 }
 
-                std::string failureReason; 
-                if( !( PrimitiveDeserializer< T, V >::deserialize( primitiveMember,
-                                                                   *nextValue,
-                                                                   failureReason ) ) )
-                {
-                    std::ostringstream oss;
-
-                    oss << "member[" << memberMeta << "] failed to be deserialized[" << failureReason << "]";
-
-                    handleFailure( oss.str(), true );
-                }
-            }
-
-            template< typename T >
-            bool EnterMapMember( const MemberMeta& memberMeta, T& mapMember )
-            {
-                if( !valid )
-                    return false;
-
-                const ValueType* nextValue = getNextValue( memberMeta );
-
-                if( !nextValue )
-                {
-                    std::ostringstream oss;
-
-                    oss << "member[" << memberMeta << "] not found";
-
-                    handleFailure( oss.str(), true );
-
-                    return false;
-                }
-
-                if( !nextValue->IsObject() )
-                {
-                    std::ostringstream oss;
-
-                    oss << "member[" << memberMeta << "] expected object, encountered " << nextValue->GetType();
-
-                    handleFailure( oss.str(), true );
-
-                    return false;
-                }
-
-                containerStack.push_back( std::make_tuple( nextValue, ContainerType::Map ) );
-                mapContextStack.push_back(
-                    std::make_tuple(
-                        nextValue->MemberBegin(),
-                        nextValue->MemberEnd(),
-                        nullptr ) );
-
-                return true;
-            }
-
-            bool HasMoreMapEntries( const MemberMeta& memberMeta )
-            {
-                assert( mapContextStack.size() );
-
-                return ( std::get< 0 >( mapContextStack.back() ) < std::get< 1 >( mapContextStack.back() ) );
-            }
-
-            bool EnterMapEntryKey( const MemberMeta& memberMeta )
-            {
-                if( !valid )
-                    return false;
-
-                assert( mapContextStack.size() );
-                assert( std::get< 0 >( mapContextStack.back() ) !=
-                        std::get< 1 >( mapContextStack.back() ) );
-
-                std::get< 2 >( mapContextStack.back() ) = &std::get< 0 >( mapContextStack.back() )->name;
-
-                return true;
-            }
-
-            void LeaveMapEntryKey( const MemberMeta& memberMeta )
-            {
-                assert( mapContextStack.size() );
-                std::get< 2 >( mapContextStack.back() ) = nullptr;
-            }
-
-            bool EnterMapEntryValue( const MemberMeta& memberMeta )
-            {
-                if( !valid )
-                    return false;
-
-                assert( mapContextStack.size() );
-                std::get< 2 >( mapContextStack.back() ) = &std::get< 0 >( mapContextStack.back() )->value;
-
-                return true;
-            }
-
-            void LeaveMapEntryValue( const MemberMeta& memberMeta )
-            {
-                assert( mapContextStack.size() );
-                // go to next map entry
-                std::get< 2 >( mapContextStack.back() ) = nullptr;
-                ++( std::get< 0 >( mapContextStack.back() ) );
-            }
-
-            template< typename T >
-            void LeaveMapMember( const MemberMeta& memberMeta, T& mapMember )
-            {
-                containerStack.pop_back();
-                mapContextStack.pop_back();
-            }
-
-            bool AnyFailures() const
-            {
-                return anyFailures || !valid;
-            }
-
-        private:
-            typedef std::tuple< const ValueType*, ContainerType > ContainerContext;
-            typedef typename ValueType::ConstMemberIterator MembIt;
-            typedef typename ValueType::ConstValueIterator ValueIt;
-
-            // start|end|next values in map/array
-            typedef std::tuple< MembIt, MembIt, const ValueType* > MapContext;
-            typedef std::tuple< ValueIt, ValueIt > ArrayContext;
-
-            const ValueType* getNextValue( const MemberMeta& memberMeta )
-            {
-                assert( containerStack.size() );
-                const ContainerContext& currentContainer = containerStack.back();
-
-                switch( std::get< 1 >( currentContainer ) )
-                {
-                    case( ContainerType::Array ):
-                    {
-                        assert( arrayContextStack.size() );
-                        assert( std::get< 0 >( arrayContextStack.back() ) !=
-                                std::get< 1 >( arrayContextStack.back() ) );
-
-                        return std::get< 0 >( arrayContextStack.back() );
-                    }
-                    case( ContainerType::Map ):
-                    {
-                        assert( mapContextStack.size() );
-                        assert( std::get< 2 >( mapContextStack.back() ) );
-
-                        return std::get< 2 >( mapContextStack.back() );
-                    }
-                    case( ContainerType::Model ):
-                    default:
-                    {
-                        const ValueType& currentValue = *( std::get< 0 >( currentContainer ) );
-
-                        MembIt membIt = currentValue.FindMember( memberMeta.name );
-
-                        if( membIt == currentValue.MemberEnd() )
-                            return nullptr;
-                        else
-                            return &(membIt->value);
-                    }
-                }
-            }
-
-            void handleFailure( const std::string& failureReason, bool canContinue )
-            {
-                anyFailures = true;
-
-                if( failureHandling == FailureHandling::Throw )
+                if ( !canContinue || ( failureHandling == FailureHandling::FailFast ) )
                 {
                     valid = false;
-                    throw DeseriailzationFailure( failureReason );
-                }
-                else
-                {
-                    if( trace )
-                    {
-                        if( !firstTrace )
-                            *trace << "\n";
-
-                        *trace << failureReason;
-                        firstTrace = false;
-                    }
-
-                    if( !canContinue || ( failureHandling == FailureHandling::FailFast ) )
-                    {
-                        valid = false;
-                    }
                 }
             }
+        }
 
-            const ValueType& v;
-            std::deque< ContainerContext > containerStack;
-            std::deque< MapContext > mapContextStack;
-            std::deque< ArrayContext > arrayContextStack;
-            FailureHandling failureHandling;
-            std::ostream* trace;
-            bool firstTrace;
-            bool anyFailures;
-            bool valid;
+        const ValueType& v;
+        std::deque< ContainerContext > containerStack;
+        std::deque< MapContext > mapContextStack;
+        std::deque< ArrayContext > arrayContextStack;
+        FailureHandling failureHandling;
+        std::ostream* trace;
+        bool firstTrace;
+        bool anyFailures;
+        bool valid;
     };
 
     template< typename W, typename T >
@@ -616,7 +652,7 @@ namespace LHModelUtilNS
     template< typename W >
     void defaultSerialize( W& w, bool inKey, const std::string& value )
     {
-        if( inKey )
+        if ( inKey )
             w.Key( value.c_str(), value.size() );
         else
             w.String( value.c_str(), value.size() );
@@ -643,18 +679,21 @@ namespace LHModelUtilNS
     template< typename W >
     void defaultSerialize( W& w, bool inKey, int64_t value )
     {
+        (void)inKey;
         w.Int64( value );
     }
 
     template< typename W >
     void defaultSerialize( W& w, bool inKey, uint64_t value )
     {
+        (void)inKey;
         w.Uint64( value );
     }
 
     template< typename W >
     void defaultSerialize( W& w, bool inKey, double value )
     {
+        (void)inKey;
         w.Double( value );
     }
 
@@ -677,7 +716,7 @@ namespace LHModelUtilNS
     template< typename T, typename V >
     bool defaultDeserialize( T& member, const V& value, std::string& failureReason )
     {
-        if( !value.template Is<T>() )
+        if ( !value.template Is<T>() )
         {
             std::ostringstream oss;
 
@@ -696,7 +735,7 @@ namespace LHModelUtilNS
     template< typename V >
     bool defaultDeserialize( std::string& member, const V& value, std::string& failureReason )
     {
-        if( !value.IsString() )
+        if ( !value.IsString() )
         {
             std::ostringstream oss;
 

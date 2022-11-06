@@ -44,6 +44,8 @@ namespace LHModelUtilNS
         template< typename T >
         bool EnterArrayMember( const MemberMeta& memberMeta, const T& arrayMember )
         {
+            (void)memberMeta;
+            (void)arrayMember;
             // no nested arrays
 
             if ( inArray )
@@ -58,17 +60,21 @@ namespace LHModelUtilNS
 
         bool EnterArrayValue( const MemberMeta& memberMeta )
         {
+            (void)memberMeta;
             return true;
         }
 
         void LeaveArrayValue( const MemberMeta& memberMeta )
         {
+            (void)memberMeta;
             return;
         }
 
         template< typename T >
         void LeaveArrayMember( const MemberMeta& memberMeta, const T& vectorMember )
         {
+            (void)memberMeta;
+            (void)vectorMember;
             inArray = false;
         }
 
@@ -109,6 +115,7 @@ namespace LHModelUtilNS
     public:
         MultiMapDeserializer( const MM& _mm )
             : mm( _mm )
+            , inArray( false )
             , itRange()
             , currIt()
         {
@@ -118,6 +125,7 @@ namespace LHModelUtilNS
         template< typename T >
         bool EnterArrayMember( const MemberMeta& memberMeta, T& arrayMember )
         {
+            (void)arrayMember;
             // no nested arrays
 
             if ( inArray )
@@ -135,16 +143,19 @@ namespace LHModelUtilNS
 
         bool HasMoreArrayValues( const MemberMeta& memberMeta )
         {
+            (void)memberMeta;
             return currIt != itRange.second;
         }
 
         bool EnterArrayValue( const MemberMeta& memberMeta )
         {
+            (void)memberMeta;
             return true;
         }
 
         void LeaveArrayValue( const MemberMeta& memberMeta )
         {
+            (void)memberMeta;
             ++currIt;
             return;
         }
@@ -152,6 +163,8 @@ namespace LHModelUtilNS
         template< typename T >
         void LeaveArrayMember( const MemberMeta& memberMeta, T& vectorMember )
         {
+            (void)memberMeta;
+            (void)vectorMember;
             inArray = false;
             return;
         }

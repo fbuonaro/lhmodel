@@ -1,12 +1,10 @@
+################################################################################## 
+# STAGE 0 - base environment with first set of runtime dependencies 
 ##################################################################################
-# STAGE 0 - base environemtn with first set of runtime dependencies
-##################################################################################
-FROM centos:centos7 as lhmodel-s0-base-env
-LABEL lhmodel-stage-base-env="yes"
-LABEL lhmodel-stage-build-env="no"
-LABEL lhmodel-stage-build="no"
-LABEL lhmodel-stage-test-env="no"
-LABEL lhmodel-stage-main="no"
+ARG BUILD_TAG
+ARG GIT_COMMIT
+
+FROM centos:centos7 as lhmodel-base-env
 
 RUN yum -y --enablerepo=extras install epel-release && \
     yum -y install https://repo.ius.io/ius-release-el7.rpm && \
@@ -15,12 +13,7 @@ RUN yum -y --enablerepo=extras install epel-release && \
 ##################################################################################
 # STAGE 1 - build tools and libraries needed to build lhmodel
 ##################################################################################
-FROM lhmodel-s0-base-env as lhmodel-s1-build-env
-LABEL lhmodel-stage-base-env="no"
-LABEL lhmodel-stage-build-env="yes"
-LABEL lhmodel-stage-build="no"
-LABEL lhmodel-stage-test-env="no"
-LABEL lhmodel-stage-main="no"
+FROM lhmodel-base-env as lhmodel-build-env
 
 # for compiling and unit testing
 RUN yum -y install \
@@ -28,8 +21,15 @@ RUN yum -y install \
         gcc \
         gcc-c++ \
         gtest-devel \
-        rapidjson-devel \
-        make && \
+        make \
+        rpm-build && \
+    yum clean all
+
+ADD ./modules/lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh /refreshOrSetupLHDistYumRepo.sh
+RUN /refreshOrSetupLHDistYumRepo.sh
+
+RUN yum -y install \
+        rapidjson-devel && \
     yum clean all
 
 ENTRYPOINT [ "bash" ]
@@ -37,54 +37,67 @@ ENTRYPOINT [ "bash" ]
 ##################################################################################
 # STAGE 2 - the lhmodel source and compiled binaries
 ##################################################################################
-FROM lhmodel-s1-build-env as lhmodel-s2-build
-LABEL lhmodel-stage-base-env="no"
-LABEL lhmodel-stage-build-env="no"
-LABEL lhmodel-stage-build="yes"
-LABEL lhmodel-stage-test-env="no"
-LABEL lhmodel-stage-main="no"
+FROM lhmodel-build-env as lhmodel-build
 
 ADD . /lhmodel
 RUN cd /lhmodel && \
     mkdir ./build && \
     cd ./build && \
     cmake3 \
-        -DCMAKE_BUILD_TYPE=Release \
-        ../ && \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCPACK_PACKAGE_DIRECTORY=/lhdist \
+    ../ && \
     make && \
-    make test
+    make test && \
+    make package && \
+    /refreshOrSetupLHDistYumRepo.sh
+
+ENV BUILD_TAG=${BUILD_TAG}
+LABEL build_tag="${BUILD_TAG}"
+ENV GIT_COMMIT=${GIT_COMMIT}
+LABEL git_commit="${GIT_COMMIT}"
 
 ##################################################################################
 # STAGE 3 - the base image with additional built runtime dependencies, lhmodel 
 #           binaries and test binaries needed for running integration tests
 #           includes everything from build-env
 ##################################################################################
-FROM lhmodel-s2-build as lhmodel-s3-test-env
-LABEL lhmodel-stage-base-env="no"
-LABEL lhmodel-stage-build-env="no"
-LABEL lhmodel-stage-build="no"
-LABEL lhmodel-stage-test-env="yes"
-LABEL lhmodel-stage-main="no"
+FROM lhmodel-build as lhmodel-test-env
 
 RUN cd /lhmodel/build && \
-    make install-lhmodel && \
-    make install-lhmodelutil
+    make install && \
+    ldconfig
 
 ##################################################################################
 # STAGE 4 - the base image with additional built runtime dependencies and 
 #           lhmodel binaries includes nothing from build-env
 ##################################################################################
-FROM lhmodel-s0-base-env as lhmodel-s4-main-env
-LABEL lhmodel-stage-base-env="no"
-LABEL lhmodel-stage-build-env="no"
-LABEL lhmodel-stage-build="no"
-LABEL lhmodel-stage-test-env="no"
-LABEL lhmodel-stage-main="yes"
+FROM lhmodel-base-env as lhmodel-main
 
-COPY --from=lhmodel-s2-build /usr/ /usr/
-COPY --from=lhmodel-s2-build /lhmodel/ /lhmodel/
+COPY --from=lhmodel-build /usr/ /usr/
+COPY --from=lhmodel-build /etc/ /etc/
+COPY --from=lhmodel-build /lhmodel/ /lhmodel/
 RUN cd /lhmodel/build && \
-    make install-lhmodel && \
-    make install-lhmodelutil && \
+    make install && \
+    make package && \
+    ldconfig && \
     cd / && \
     rm -rf /lhmodel
+
+##################################################################################
+# STAGE 5 - the base image with additional built runtime dependencies and 
+#           lhmodel binaries includes nothing from build-env
+##################################################################################
+FROM lhmodel-base-env as lhmodel-dist-test
+
+COPY --from=lhmodel-build /lhdist/ /lhdist/
+ADD ./modules/lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh /refreshOrSetupLHDistYumRepo.sh
+RUN /refreshOrSetupLHDistYumRepo.sh
+RUN yum -y repo-pkgs lhdistrepo install && \
+    ldconfig && \
+    yum clean all
+
+FROM lhmodel-base-env as lhmodel-dist
+
+COPY --from=lhmodel-dist-test /lhdist/ /lhdist/

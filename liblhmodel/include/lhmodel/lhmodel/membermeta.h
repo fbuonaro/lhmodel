@@ -13,34 +13,34 @@ namespace LHModelNS
     // Member metadata
     class MemberMeta
     {
-        public:
-            constexpr MemberMeta( const MemberMeta& other )
-            :   name( other.name )
-            ,   type( other.type )
-            ,   format( other.format )
-            {
-            }
+    public:
+        constexpr MemberMeta( const MemberMeta& other )
+            : name( other.name )
+            , type( other.type )
+            , format( other.format )
+        {
+        }
 
-            constexpr MemberMeta( const char* _name, const char* _type, const char* _format )
-            :   name( _name )
-            ,   type( _type )
-            ,   format( _format )
-            {
-            }
+        constexpr MemberMeta( const char* _name, const char* _type, const char* _format )
+            : name( _name )
+            , type( _type )
+            , format( _format )
+        {
+        }
 
-            friend std::ostream& operator<<( std::ostream& os, const MemberMeta& memberMeta );
+        friend std::ostream& operator<<( std::ostream& os, const MemberMeta& memberMeta );
 
-            const char* name;
-            const char* type;
-            const char* format;
+        const char* name;
+        const char* type;
+        const char* format;
 
-        private:
-            constexpr MemberMeta()
-            :   name( nullptr )
-            ,   type( nullptr )
-            ,   format( nullptr )
-            {
-            }
+    private:
+        constexpr MemberMeta()
+            : name( nullptr )
+            , type( nullptr )
+            , format( nullptr )
+        {
+        }
     };
 
     std::ostream& operator<<( std::ostream& os, const MemberMeta& memberMeta );
@@ -49,9 +49,9 @@ namespace LHModelNS
     template< typename T >
     class ModelMembersMeta
     {
-        public:
-            // undefined, will fail to link
-            static constexpr std::array< MemberMeta, 0 > membersMeta{};
+    public:
+        // undefined, will fail to link
+        static constexpr std::array< MemberMeta, 0 > membersMeta{ {} };
     };
 
     // Lookup member metadata for a type at the specified member index
@@ -59,7 +59,7 @@ namespace LHModelNS
     constexpr const MemberMeta& GetMemberMeta()
     {
         static_assert( i < ModelMembersMeta< T >::membersMeta.size(),
-                       "memberIndex exceeds number of members for type" );
+            "memberIndex exceeds number of members for type" );
 
         return ModelMembersMeta< T >::membersMeta[ i ];
     }
@@ -80,23 +80,23 @@ namespace LHModelNS
     template< typename T >
     class MemberType
     {
-        public:
-            typedef PrimitiveMemberType valueType;
+    public:
+        typedef PrimitiveMemberType valueType;
     };
 
     // Mapping from any type of vector to ArrayMemberType
     template< typename T, typename A >
     class MemberType< std::vector< T, A > >
     {
-        public:
-            typedef ArrayMemberType valueType;
+    public:
+        typedef ArrayMemberType valueType;
     };
 
     template< typename K, typename T, typename H, typename C, typename A >
     class MemberType< std::unordered_map< K, T, H, C, A > >
     {
-        public:
-            typedef MapMemberType valueType;
+    public:
+        typedef MapMemberType valueType;
     };
 }
 

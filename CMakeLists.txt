@@ -8,5 +8,10 @@ project( lhmodel
 
 enable_testing()
 
-add_subdirectory( liblhmodel )
-add_subdirectory( liblhmodelutil )
+set(LH_SUBDIRECTORIES liblhmodel liblhmodelutil)
+
+include("modules/lhscriptutil/cmake/lhmacros.cmake")
+
+lh_toplevel_add_subdirectories()
+
+lh_toplevel_add_cpack_package_components()

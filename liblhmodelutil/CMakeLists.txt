@@ -25,6 +25,9 @@ set( LH_INSTALL_BINDIR "${CMAKE_INSTALL_BINDIR}" )
 set( LH_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/liblhmodelutil_${PROJECT_VERSION}" )
 set( LH_INSTALL_INCDIR "${CMAKE_INSTALL_INCLUDEDIR}/lhmodelutil_${PROJECT_VERSION}" )
 
+# library name
+set( LH_LIB_NAME lhmodelutil )
+
 # pull in rapidjson
 find_package( RapidJSON REQUIRED )
 # pull in liblhmodel

@@ -124,6 +124,8 @@ lh_add_install_cmake_config()
 # rpm packaging
 ##############################################################
  
+set( CPACK_RPM_LIBLHMODELUTIL_PACKAGE_REQUIRES "rapidjson-devel" PARENT_SCOPE)
+
 # to relocate the pc file prefix to /somewhere if 'rpm --install --prefix /somewhere'
 set( CPACK_RPM_LIBLHMODELUTIL_PACKAGE_REQUIRES_POST "sed" PARENT_SCOPE) 
 set( CPACK_RPM_LIBLHMODELUTIL_POST_INSTALL_SCRIPT_FILE "${PC_RELOCATE_SCRIPT}" PARENT_SCOPE)

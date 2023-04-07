@@ -1,10 +1,10 @@
 ##################################################################################
-# STAGE 0 - base environemtn with first set of runtime dependencies
+# STAGE 0 - base environment with first set of runtime dependencies
 ##################################################################################
-FROM centos:centos7 as lhmodel-scg-s0-base-env
-LABEL lhmodel-scg-stage-base-env="yes"
-LABEL lhmodel-scg-stage-build-env="no"
-LABEL lhmodel-scg-stage-build="no"
+ARG BUILD_TAG
+ARG GIT_COMMIT
+
+FROM centos:centos7 as lhmodel-scg-base-env
 
 RUN yum -y --enablerepo=extras install epel-release && \
     yum -y install https://repo.ius.io/ius-release-el7.rpm && \
@@ -13,10 +13,7 @@ RUN yum -y --enablerepo=extras install epel-release && \
 ##################################################################################
 # STAGE 1 - build tools and libraries needed to build lhmodel swagger code generator skeleton
 ##################################################################################
-FROM lhmodel-scg-s0-base-env as lhmodel-scg-s1-build-env
-LABEL lhmodel-scg-stage-base-env="no"
-LABEL lhmodel-scg-stage-build-env="yes"
-LABEL lhmodel-scg-stage-build="no"
+FROM lhmodel-scg-base-env as lhmodel-scg-build-env
 
 # for getting, running swagger-codegen
 # 'which' used by mvn to get the right java version
@@ -50,10 +47,7 @@ ENTRYPOINT [ "java", "-jar", "/lhmodel-scg/swagger-codegen/swagger-codegen-cli.j
 ##################################################################################
 # STAGE 2 - the lhmodel swagger code generator source skeleton
 ##################################################################################
-FROM lhmodel-scg-s1-build-env as lhmodel-scg-s2-build
-LABEL lhmodel-scg-stage-base-env="no"
-LABEL lhmodel-scg-stage-build-env="no"
-LABEL lhmodel-scg-stage-build="yes"
+FROM lhmodel-scg-build-env as lhmodel-scg-build
 
 # build the lhmodel codegen module
 ADD ./codegen_module /lhmodel-scg/codegen_module
@@ -71,6 +65,16 @@ RUN mkdir -p /lhmodel-scg/test/generated && \
         --additional-properties modelIncludeDir=lhmodel_test,customFormatTypesFile=/lhmodel-scg/codegen_module/test/TestLHModel/customTypes.js \
         -o /lhmodel-scg/test/generated && \
     diff -r /lhmodel-scg/codegen_module/test/TestLHModel/expected/src /lhmodel-scg/test/generated/src
+
+ENV BUILD_TAG=${BUILD_TAG}
+LABEL build_tag="${BUILD_TAG}"
+ENV GIT_COMMIT=${GIT_COMMIT}
+LABEL git_commit="${GIT_COMMIT}"
+
+##################################################################################
+# STAGE 3 - the lhmodel swagger code generator executable
+##################################################################################
+FROM lhmodel-scg-build as lhmodel-scg-main
 
 # generate src and header files from spec and conf
 ENTRYPOINT [ "java", \

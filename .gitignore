@@ -30,7 +30,11 @@
 *.exe
 *.out
 *.app
-*.swp
 
 /build/
+*.swp
+
 codegen_module/LHModelServerCodegen/target/
+
+/modules/**
+!/modules/.keepdir

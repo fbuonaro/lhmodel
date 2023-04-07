@@ -12,7 +12,10 @@ RUN yum -y --enablerepo=extras install epel-release && \
 
 ##################################################################################
 # STAGE 1 - build tools and libraries needed to build lhmodel
-##################################################################################
+#### deps ###
+FROM lhscriptutil:dist-${BUILD_TAG} AS lhscriptutil_dist_build
+### deps ###
+#################################################################################
 FROM lhmodel-base-env as lhmodel-build-env
 
 # for compiling and unit testing
@@ -25,8 +28,8 @@ RUN yum -y install \
         rpm-build && \
     yum clean all
 
-ADD ./modules/lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh /refreshOrSetupLHDistYumRepo.sh
-RUN /refreshOrSetupLHDistYumRepo.sh
+COPY --from=lhscriptutil_dist_build /lhscriptutil/ /lhscriptutil/
+RUN /lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh
 
 RUN yum -y install \
         rapidjson-devel && \
@@ -51,7 +54,7 @@ RUN cd /lhmodel && \
     make && \
     make test && \
     make package && \
-    /refreshOrSetupLHDistYumRepo.sh
+    /lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh
 
 ENV BUILD_TAG=${BUILD_TAG}
 LABEL build_tag="${BUILD_TAG}"
@@ -75,29 +78,17 @@ RUN cd /lhmodel/build && \
 ##################################################################################
 FROM lhmodel-base-env as lhmodel-main
 
-COPY --from=lhmodel-build /usr/ /usr/
-COPY --from=lhmodel-build /etc/ /etc/
-COPY --from=lhmodel-build /lhmodel/ /lhmodel/
-RUN cd /lhmodel/build && \
-    make install && \
-    make package && \
+COPY --from=lhmodel-build /lhdist/ /lhdist/
+COPY --from=lhmodel-build-env /lhscriptutil/ /lhscriptutil/
+RUN /lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh
+RUN yum -y repo-pkgs lhdistrepo install && \
     ldconfig && \
-    cd / && \
-    rm -rf /lhmodel
+    yum clean all
 
 ##################################################################################
 # STAGE 5 - the base image with additional built runtime dependencies and 
 #           lhmodel binaries includes nothing from build-env
 ##################################################################################
-FROM lhmodel-base-env as lhmodel-dist-test
-
-COPY --from=lhmodel-build /lhdist/ /lhdist/
-ADD ./modules/lhscriptutil/scripts/refreshOrSetupLHDistYumRepo.sh /refreshOrSetupLHDistYumRepo.sh
-RUN /refreshOrSetupLHDistYumRepo.sh
-RUN yum -y repo-pkgs lhdistrepo install && \
-    ldconfig && \
-    yum clean all
-
 FROM lhmodel-base-env as lhmodel-dist
 
-COPY --from=lhmodel-dist-test /lhdist/ /lhdist/
+COPY --from=lhmodel-main /lhdist/ /lhdist/

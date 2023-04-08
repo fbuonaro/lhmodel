@@ -27,7 +27,7 @@ lhQuickBuildImageNoK8(
     "lhmodel-scg", 
     scgCfg, 
     dockerfile="Dockerfiles/Dockerfile.swagger-codegen",
-    container_args=["-h"]
+    entrypoint="echo 'image built'"
  )
 
 lhQuickBuildImageNoK8( "lhmodel", cfg, dockerfile="Dockerfiles/Dockerfile.lhmodel" )
